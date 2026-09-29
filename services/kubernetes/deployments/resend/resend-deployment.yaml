@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resend-service
+  template:
+    metadata:
+      labels:
+        app: resend-service
+    spec:
+      imagePullSecrets:
+        - name: arearegistrykey
+      containers:
+      - name: resend-container
+        image: julesreyn/area:resend
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        env:
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: resend-secret
+              key: RESEND_API_KEY

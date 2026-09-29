@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chess-tracker-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chess-tracker-service
+  template:
+    metadata:
+      labels:
+        app: chess-tracker-service
+    spec:
+      imagePullSecrets:
+        - name: arearegistrykey
+      containers:
+      - name: chess-tracker-container
+        image: julesreyn/area:chess-tracker
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

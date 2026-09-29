@@ -1,0 +1,135 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - area.skead.fr
+    secretName: area-skead-fr-tls
+  rules:
+  - host: area.skead.fr
+    http:
+      paths:
+      - path: /discord
+        pathType: Prefix
+        backend:
+          service:
+            name: discord-service
+            port:
+              number: 80
+      - path: /google
+        pathType: Prefix
+        backend:
+          service:
+            name: drive-service
+            port:
+              number: 80
+      - path: /time
+        pathType: Prefix
+        backend:
+          service:
+            name: time-service
+            port:
+              number: 80
+      - path: /brawlstar
+        pathType: Prefix
+        backend:
+          service:
+            name: brawlstar-service
+            port:
+              number: 80
+      - path: /binance
+        pathType: Prefix
+        backend:
+          service:
+            name: binance-service
+            port:
+              number: 80
+      - path: /openweather
+        pathType: Prefix
+        backend:
+          service:
+            name: openweather-service
+            port:
+              number: 80
+      - path: /spotify
+        pathType: Prefix
+        backend:
+          service:
+            name: spotify-service
+            port:
+              number: 80
+      - path: /github
+        pathType: Prefix
+        backend:
+          service:
+            name: github-service
+            port:
+              number: 80
+      - path: /sms
+        pathType: Prefix
+        backend:
+          service:
+            name: sms-service
+            port:
+              number: 80
+      - path: /gmail
+        pathType: Prefix
+        backend:
+          service:
+            name: gmail-service
+            port:
+              number: 80
+      - path: /prayer
+        pathType: Prefix
+        backend:
+          service:
+            name: prayer-service
+            port:
+              number: 80
+      - path: /calendar
+        pathType: Prefix
+        backend:
+          service:
+            name: calendar-service
+            port:
+              number: 80
+      - path: /twitch
+        pathType: Prefix
+        backend:
+          service:
+            name: twitch-service
+            port:
+              number: 80
+      - path: /checkhost
+        pathType: Prefix
+        backend:
+          service:
+            name: checkhost-service
+            port:
+              number: 80
+      - path: /christmas
+        pathType: Prefix
+        backend:
+          service:
+            name: christmas-service
+            port:
+              number: 80
+      - path: /resend
+        pathType: Prefix
+        backend:
+          service:
+            name: resend-service
+            port:
+              number: 80
+      - path: /chess-tracker
+        pathType: Prefix
+        backend:
+          service:
+            name: chess-tracker-service
+            port:
+              number: 80

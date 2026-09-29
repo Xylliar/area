@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkhost-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: checkhost-service
+  template:
+    metadata:
+      labels:
+        app: checkhost-service
+    spec:
+      imagePullSecrets:
+        - name: arearegistrykey
+      containers:
+      - name: checkhost-container
+        image: julesreyn/area:checkhost
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

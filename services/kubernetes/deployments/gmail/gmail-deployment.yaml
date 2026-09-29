@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gmail-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gmail-service
+  template:
+    metadata:
+      labels:
+        app: gmail-service
+    spec:
+      imagePullSecrets:
+        - name: arearegistrykey
+      containers:
+      - name: gmail-container
+        image: julesreyn/area:gmail
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

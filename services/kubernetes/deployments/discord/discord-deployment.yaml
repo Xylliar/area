@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discord-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discord-service
+  template:
+    metadata:
+      labels:
+        app: discord-service
+    spec:
+      imagePullSecrets:
+        - name: arearegistrykey
+      containers:
+      - name: discord-container
+        image: julesreyn/area:discord
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

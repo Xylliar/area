@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twitch-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: twitch-service
+  template:
+    metadata:
+      labels:
+        app: twitch-service
+    spec:
+      imagePullSecrets:
+        - name: arearegistrykey
+      containers:
+      - name: twitch-container
+        image: julesreyn/area:twitch
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        env:
+        - name: TWITCH_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: twitch-secret
+              key: TWITCH_CLIENT_ID

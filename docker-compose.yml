@@ -1,0 +1,182 @@
+# Every variable has a default: `docker compose up` works without any .env file.
+# Copy .env.example to .env to set API keys and OAuth credentials.
+
+x-microservice: &microservice
+  restart: unless-stopped
+
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-area}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-area}
+      POSTGRES_DB: ${POSTGRES_DB:-area_db}
+    volumes:
+      - database-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  server:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-area}:${POSTGRES_PASSWORD:-area}@database:5432/${POSTGRES_DB:-area_db}
+      SERVER_URL: ${SERVER_URL:-http://localhost:8080}
+      WEB_CLIENT_URL: ${WEB_CLIENT_URL:-http://localhost:8081}
+      SECRET_KEY: ${SECRET_KEY:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:-}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
+    volumes:
+      - service-icons:/icons
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  # Builds the Android client and drops it in the volume shared with client_web.
+  # Opt-in because the Flutter build takes a while: docker compose --profile mobile up
+  client_mobile:
+    build: ./mobile_client
+    platform: linux/amd64
+    profiles: [mobile]
+    user: root
+    command: ["sh", "-c", "cp build/app/outputs/flutter-apk/app-release.apk /apk/client.apk"]
+    volumes:
+      - apk:/apk
+
+  client_web:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${SERVER_URL:-http://localhost:8080}
+        NEXT_PUBLIC_BASE_URL: ${WEB_CLIENT_URL:-http://localhost:8081}
+        INTERNAL_API_URL: http://server:8080
+    ports:
+      - "8081:8081"
+    environment:
+      INTERNAL_API_URL: http://server:8080
+      APK_PATH: /apk/client.apk
+    volumes:
+      - apk:/apk:ro
+    depends_on:
+      server:
+        condition: service_healthy
+      client_mobile:
+        condition: service_completed_successfully
+        required: false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  binance-service:
+    <<: *microservice
+    build: ./services/images/binance
+
+  brawlstar-service:
+    <<: *microservice
+    build: ./services/images/brawlstar
+    environment:
+      API_KEY: ${BRAWLSTARS_API_KEY:-}
+
+  calendar-service:
+    <<: *microservice
+    build: ./services/images/calendar
+
+  checkhost-service:
+    <<: *microservice
+    build: ./services/images/checkhost
+
+  chess-tracker-service:
+    <<: *microservice
+    build: ./services/images/chess-tracker
+
+  christmas-service:
+    <<: *microservice
+    build: ./services/images/christmas
+
+  discord-service:
+    <<: *microservice
+    build: ./services/images/discord
+
+  drive-service:
+    <<: *microservice
+    build: ./services/images/drive
+
+  github-service:
+    <<: *microservice
+    build: ./services/images/github
+    environment:
+      SERVER_URL: http://server:8080
+      GITHUB_WEBHOOK_URL: ${GITHUB_WEBHOOK_URL:-}
+
+  gmail-service:
+    <<: *microservice
+    build: ./services/images/gmail
+
+  openweather-service:
+    <<: *microservice
+    build: ./services/images/openweather
+    environment:
+      WEATHER_API: ${OPENWEATHER_API_KEY:-}
+
+  prayer-service:
+    <<: *microservice
+    build: ./services/images/prayer
+
+  resend-service:
+    <<: *microservice
+    build: ./services/images/resend
+    environment:
+      API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${EMAIL_FROM:-}
+
+  sms-service:
+    <<: *microservice
+    build: ./services/images/sms
+    environment:
+      API_KEY: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-}
+
+  spotify-service:
+    <<: *microservice
+    build: ./services/images/spotify
+
+  time-service:
+    <<: *microservice
+    build: ./services/images/time
+
+  twitch-service:
+    <<: *microservice
+    build: ./services/images/twitch
+    environment:
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:-}
+
+volumes:
+  database-data:
+  service-icons:
+  apk:

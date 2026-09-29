@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: time-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: time-service
+  template:
+    metadata:
+      labels:
+        app: time-service
+    spec:
+      imagePullSecrets:
+        - name: arearegistrykey
+      containers:
+      - name: time-container
+        image: julesreyn/area:time
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

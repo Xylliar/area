@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calendar-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: calendar-service
+  template:
+    metadata:
+      labels:
+        app: calendar-service
+    spec:
+      imagePullSecrets:
+        - name: arearegistrykey
+      containers:
+      - name: calendar-container
+        image: julesreyn/area:calendar
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

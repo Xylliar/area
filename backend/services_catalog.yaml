@@ -1,0 +1,495 @@
+# Services, actions and reactions loaded into an empty database at startup (see seed.py).
+#
+# service:          host key of the microservice; the route prefix is SERVICE_URL_TEMPLATE
+#                   with "{service}" replaced by this key (http://<service>-service:8000 in docker-compose).
+# provider:         OAuth account the user must link to use the component (google, github, discord,
+#                   spotify, twitch), omitted when no user account is needed.
+# polling_interval: minutes between two checks of a polling action.
+# webhook:          the action registers a webhook instead of being polled.
+# input_fields:     values asked to the user; the regex is checked by the clients and the server.
+# output_fields:    values returned by the action, usable in reaction inputs as {field}.
+
+- name: Binance
+  service: binance
+  color: "#F0B90B"
+  actions:
+    - title: Crypto price rises
+      description: The average price of a cryptocurrency (in USDT) rose by more than the given percentage since it was last recorded.
+      route: /binance/checkIncrease
+      polling_interval: 5
+      input_fields:
+        - {name: symbol, regex: '^[A-Z0-9]{2,10}$', example: BTC}
+        - {name: pourcentage, regex: '^\d+(\.\d+)?$', example: "2.5"}
+      output_fields: [price]
+    - title: Crypto price drops
+      description: The average price of a cryptocurrency (in USDT) dropped by more than the given percentage since it was last recorded.
+      route: /binance/checkDecrease
+      polling_interval: 5
+      input_fields:
+        - {name: symbol, regex: '^[A-Z0-9]{2,10}$', example: ETH}
+        - {name: pourcentage, regex: '^\d+(\.\d+)?$', example: "2.5"}
+      output_fields: [price]
+
+- name: Brawl Stars
+  service: brawlstar
+  color: "#FFB800"
+  actions:
+    - title: New trophy record
+      description: A player beat their highest trophy count.
+      route: /brawlstar/check_trophies
+      polling_interval: 10
+      input_fields:
+        - {name: playertag, regex: '^#?[0-9A-Z]{3,12}$', example: "#2PP"}
+      output_fields: [new_trophies]
+    - title: Map rotation changed
+      description: The maps of the current event rotation changed.
+      route: /brawlstar/check_map
+      polling_interval: 30
+      output_fields: [new_maps]
+
+- name: CheckHost
+  service: checkhost
+  color: "#2E7D32"
+  actions:
+    - title: Host unreachable
+      description: The host does not answer to a ping sent from check-host.net.
+      route: /checkhost/ping
+      polling_interval: 5
+      input_fields:
+        - {name: host, regex: '^[A-Za-z0-9.-]+$', example: example.com}
+      output_fields: [message]
+    - title: TCP port unreachable
+      description: A TCP connection to the host and port sent from check-host.net fails.
+      route: /checkhost/tcp
+      polling_interval: 5
+      input_fields:
+        - {name: host, regex: '^[A-Za-z0-9.-]+:\d{1,5}$', example: "example.com:443"}
+      output_fields: [message]
+
+- name: Chess.com
+  service: chess-tracker
+  color: "#81B64C"
+  actions:
+    - title: Rating increased
+      description: The Chess.com rating of a player went up in the chosen game mode.
+      route: /chess-tracker/get-stats
+      polling_interval: 30
+      input_fields:
+        - {name: playername, regex: '^[A-Za-z0-9_-]{3,25}$', example: hikaru}
+        - {name: gamemode, regex: '^(chess_rapid|chess_bullet)$', example: chess_rapid}
+
+- name: Christmas
+  service: christmas
+  color: "#C62828"
+  actions:
+    - title: It is Christmas
+      description: Today is December 25th.
+      route: /christmas/days
+      polling_interval: 1440
+
+- name: Discord
+  service: discord
+  color: "#5865F2"
+  actions:
+    - title: New message in channel
+      description: New messages were posted in a channel.
+      route: /discord/new_messages_action
+      provider: discord
+      polling_interval: 1
+      input_fields:
+        - {name: channel_id, regex: '^\d{17,20}$', example: "1234567890123456789"}
+      output_fields: [messages]
+  reactions:
+    - title: Send message
+      description: Send a message in a channel with the linked account.
+      route: /discord/send_message_reaction
+      provider: discord
+      input_fields:
+        - {name: channel_id, regex: '^\d{17,20}$', example: "1234567890123456789"}
+        - {name: content, regex: '^.+$', example: Hello from AREA!}
+    - title: Send message with a webhook
+      description: Send a message in a channel through a Discord webhook, no account needed.
+      route: /discord/send_message_webhook_reaction
+      input_fields:
+        - {name: webhook_url, regex: '^https://(discord|discordapp)\.com/api/webhooks/.+$', example: "https://discord.com/api/webhooks/123/abc"}
+        - {name: content, regex: '^.+$', example: Hello from AREA!}
+    - title: Disconnect voice channel
+      description: Disconnect every member from a voice channel.
+      route: /discord/disconnect_voice_channel_reaction
+      provider: discord
+      input_fields:
+        - {name: channel_id, regex: '^\d{17,20}$', example: "1234567890123456789"}
+    - title: Add role to member
+      description: Give a role to a member of a server.
+      route: /discord/add_role_reaction
+      provider: discord
+      input_fields:
+        - {name: guild_id, regex: '^\d{17,20}$', example: "1234567890123456789"}
+        - {name: user_id, regex: '^\d{17,20}$', example: "1234567890123456789"}
+        - {name: role_id, regex: '^\d{17,20}$', example: "1234567890123456789"}
+    - title: Kick member
+      description: Kick a member from a server.
+      route: /discord/kick_reaction
+      provider: discord
+      input_fields:
+        - {name: guild_id, regex: '^\d{17,20}$', example: "1234567890123456789"}
+        - {name: user_id, regex: '^\d{17,20}$', example: "1234567890123456789"}
+
+- name: GitHub
+  service: github
+  color: "#181717"
+  actions:
+    - title: New push
+      description: Commits were pushed to a repository.
+      route: /github/push_action
+      provider: github
+      webhook: true
+      input_fields: &github_repository
+        - {name: owner, regex: '^[A-Za-z0-9-]+$', example: octocat}
+        - {name: repository, regex: '^[A-Za-z0-9_.-]+$', example: hello-world}
+      output_fields: [pusher_name, pusher_email, commits_details]
+    - title: Issue event
+      description: An issue was opened, edited, closed or updated in a repository.
+      route: /github/issue_action
+      provider: github
+      webhook: true
+      input_fields: *github_repository
+      output_fields: [action, id, number, title, body, issue_state, user, labels, assignees, create_at, update_at]
+    - title: Pull request event
+      description: A pull request was opened, edited, closed or merged in a repository.
+      route: /github/pull_request_action
+      provider: github
+      webhook: true
+      input_fields: *github_repository
+      output_fields: [action, title, body, pull_request_state, user, reviewers, assignees, labels, create_at, update_at, closed_at, merged_at]
+    - title: New branch or tag
+      description: A branch or a tag was created in a repository.
+      route: /github/create_branch_action
+      provider: github
+      webhook: true
+      input_fields: *github_repository
+      output_fields: [branch, master_branch, description, pusher_type]
+  reactions:
+    - title: Create issue
+      description: Open an issue in a repository.
+      route: /github/create_issue_reaction
+      provider: github
+      input_fields:
+        - {name: owner, regex: '^[A-Za-z0-9-]+$', example: octocat}
+        - {name: repository, regex: '^[A-Za-z0-9_.-]+$', example: hello-world}
+        - {name: title, regex: '^.+$', example: Created by AREA}
+        - {name: body, regex: '^.*$', example: "{commits_details}"}
+    - title: Create file
+      description: Commit a new file to a branch of a repository.
+      route: /github/create_file_reaction
+      provider: github
+      input_fields:
+        - {name: owner, regex: '^[A-Za-z0-9-]+$', example: octocat}
+        - {name: repository, regex: '^[A-Za-z0-9_.-]+$', example: hello-world}
+        - {name: branch, regex: '^[A-Za-z0-9_./-]+$', example: main}
+        - {name: message, regex: '^.+$', example: Add file from AREA}
+        - {name: filepath, regex: '^[A-Za-z0-9_./-]+$', example: notes/area.md}
+        - {name: content, regex: '^.*$', example: Hello from AREA}
+    - title: Create pull request
+      description: Open a pull request between two branches of a repository.
+      route: /github/create_pull_request_reaction
+      provider: github
+      input_fields:
+        - {name: owner, regex: '^[A-Za-z0-9-]+$', example: octocat}
+        - {name: repository, regex: '^[A-Za-z0-9_.-]+$', example: hello-world}
+        - {name: title, regex: '^.+$', example: Created by AREA}
+        - {name: body, regex: '^.*$', example: Opened automatically}
+        - {name: base, regex: '^[A-Za-z0-9_./-]+$', example: main}
+        - {name: head, regex: '^[A-Za-z0-9_./-]+$', example: feature}
+    - title: Create branch
+      description: Create a branch from another branch of a repository.
+      route: /github/create_branch_reaction
+      provider: github
+      input_fields:
+        - {name: owner, regex: '^[A-Za-z0-9-]+$', example: octocat}
+        - {name: repository, regex: '^[A-Za-z0-9_.-]+$', example: hello-world}
+        - {name: new_branch, regex: '^[A-Za-z0-9_./-]+$', example: area-branch}
+        - {name: base_branch, regex: '^[A-Za-z0-9_./-]+$', example: main}
+
+- name: Gmail
+  service: gmail
+  color: "#EA4335"
+  reactions:
+    - title: Send email to myself
+      description: Send an email to the address of the linked Google account.
+      route: /gmail/send-selfmail
+      provider: google
+      input_fields:
+        - {name: subject, regex: '^.+$', example: AREA notification}
+        - {name: body, regex: '^.+$', example: Something happened}
+    - title: Send email
+      description: Send an email from the linked Google account.
+      route: /gmail/send-email
+      provider: google
+      input_fields:
+        - {name: Email, regex: '^[^@\s]+@[^@\s]+\.[^@\s]+$', example: someone@example.com}
+        - {name: subject, regex: '^.+$', example: AREA notification}
+        - {name: body, regex: '^.+$', example: Something happened}
+
+- name: Google Calendar
+  service: calendar
+  color: "#4285F4"
+  actions:
+    - title: New event
+      description: An event was added to the primary calendar.
+      route: /calendar/check-new-event
+      provider: google
+      polling_interval: 5
+    - title: New event matching a keyword
+      description: An event whose title, description or location contains the keyword was added to the primary calendar.
+      route: /calendar/check-new-event-name
+      provider: google
+      polling_interval: 5
+      input_fields:
+        - {name: keyword, regex: '^.+$', example: meeting}
+      output_fields: [NameEvents]
+  reactions:
+    - title: Add event
+      description: Add a one hour event to the primary calendar.
+      route: /calendar/add-event
+      provider: google
+      input_fields:
+        - {name: description, regex: '^.+$', example: Created by AREA}
+        - {name: time-UTC, regex: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$', example: "2025-01-31T14:00:00+01:00"}
+
+- name: Google Drive
+  service: drive
+  color: "#0F9D58"
+  reactions:
+    - title: Append to file
+      description: Append text to a Drive file, creating it if needed.
+      route: /google/drive/save
+      provider: google
+      input_fields:
+        - {name: filename, regex: '^.+$', example: area-log.txt}
+        - {name: content, regex: '^.+$', example: Something happened}
+
+- name: OpenWeather
+  service: openweather
+  color: "#EB6E4B"
+  actions:
+    - title: Weather condition
+      description: The weather in a city matches the given condition (rain, snow, clear, clouds...).
+      route: /openweather/check_weather
+      polling_interval: 30
+      input_fields:
+        - {name: city_name, regex: '^.+$', example: Paris}
+        - {name: condition, regex: '^[A-Za-z ,]+$', example: rain}
+      output_fields: [description]
+    - title: Sunrise
+      description: The sun rose in a city.
+      route: /openweather/check_sunrise
+      polling_interval: 10
+      input_fields:
+        - {name: city_name, regex: '^.+$', example: Paris}
+    - title: Sunset
+      description: The sun set in a city.
+      route: /openweather/check_sunset
+      polling_interval: 10
+      input_fields:
+        - {name: city_name, regex: '^.+$', example: Paris}
+
+- name: Prayer
+  service: prayer
+  color: "#00796B"
+  actions:
+    - title: Prayer time
+      description: The time of the chosen prayer is reached (Paris timings).
+      route: /prayer/prayer_action
+      polling_interval: 5
+      input_fields:
+        - {name: prayer, regex: '^(Fajr|Dhuhr|Asr|Maghrib|Isha)$', example: Maghrib}
+    - title: Any prayer time
+      description: The time of any of the five daily prayers is reached (Paris timings).
+      route: /prayer/next_prayer_action
+      polling_interval: 5
+      output_fields: [prayer]
+
+- name: Resend
+  service: resend
+  color: "#000000"
+  reactions:
+    - title: Send email
+      description: Send an email through the Resend API.
+      route: /resend/send
+      input_fields:
+        - {name: to, regex: '^[^@\s]+@[^@\s]+\.[^@\s]+$', example: someone@example.com}
+        - {name: subject, regex: '^.+$', example: AREA notification}
+        - {name: body, regex: '^.+$', example: "<p>Something happened</p>"}
+
+- name: SMS
+  service: sms
+  color: "#F22F46"
+  reactions:
+    - title: Send SMS
+      description: Send a text message through Twilio.
+      route: /sms/send_sms_reaction
+      input_fields:
+        - {name: phone_number, regex: '^\+[1-9]\d{6,14}$', example: "+33612345678"}
+        - {name: content, regex: '^.+$', example: Something happened}
+
+- name: Spotify
+  service: spotify
+  color: "#1DB954"
+  actions:
+    - title: New playlist
+      description: A playlist was created or followed.
+      route: /spotify/check-new-playlists
+      provider: spotify
+      polling_interval: 10
+    - title: New saved podcast
+      description: A podcast was saved to the library.
+      route: /spotify/check-new-podcasts
+      provider: spotify
+      polling_interval: 10
+      output_fields: [shows]
+    - title: New saved album
+      description: An album was saved to the library.
+      route: /spotify/check-new-albums
+      provider: spotify
+      polling_interval: 10
+      output_fields: [albums]
+    - title: New saved audiobook
+      description: An audiobook was saved to the library.
+      route: /spotify/check-new-audiobooks
+      provider: spotify
+      polling_interval: 10
+      output_fields: [audiobooks]
+  reactions:
+    - title: Skip to next track
+      description: Play the next track.
+      route: /spotify/nextplay
+      provider: spotify
+    - title: Previous track
+      description: Play the previous track.
+      route: /spotify/previousplay
+      provider: spotify
+    - title: Pause playback
+      description: Pause the current playback.
+      route: /spotify/pause
+      provider: spotify
+    - title: Resume playback
+      description: Resume the playback on the active device.
+      route: /spotify/play
+      provider: spotify
+    - title: Repeat track
+      description: Repeat the current track.
+      route: /spotify/repeat
+      provider: spotify
+    - title: Enable shuffle
+      description: Shuffle the current playback.
+      route: /spotify/shuffle
+      provider: spotify
+    - title: Add to queue
+      description: Add a track or an episode to the playback queue.
+      route: /spotify/add
+      provider: spotify
+      input_fields:
+        - {name: uri, regex: '^spotify:(track|episode):[A-Za-z0-9]{22}$', example: "spotify:track:4cOdK2wGLETKBW3PvgPWqT"}
+
+- name: Time
+  service: time
+  color: "#607D8B"
+  actions:
+    - title: Every day at
+      description: The given time of day is reached (Europe/Paris).
+      route: /time/check_trigger
+      polling_interval: 1
+      input_fields:
+        - {name: hour, regex: '^([01]\d|2[0-3]):[0-5]\d$', example: "08:30"}
+
+- name: Twitch
+  service: twitch
+  color: "#9146FF"
+  actions:
+    - title: New follower
+      description: Someone followed the channel.
+      route: /twitch/get_followers
+      provider: twitch
+      polling_interval: 5
+      output_fields: [new_followers]
+    - title: New clip
+      description: A clip was created on the channel.
+      route: /twitch/get_clips
+      provider: twitch
+      polling_interval: 5
+      output_fields: [new_clips]
+    - title: New blocked user
+      description: A user was blocked.
+      route: /twitch/get_blocks
+      provider: twitch
+      polling_interval: 5
+      output_fields: [new_blocks]
+  reactions:
+    - title: Send chat message
+      description: Send a message in the chat of a channel.
+      route: /twitch/send_message
+      provider: twitch
+      input_fields:
+        - {name: broadcaster, regex: '^[A-Za-z0-9_]{3,25}$', example: channel_name}
+        - {name: message, regex: '^.+$', example: Hello from AREA!}
+    - title: Send announcement
+      description: Send an announcement in the chat of the linked channel.
+      route: /twitch/send_announcement
+      provider: twitch
+      input_fields:
+        - {name: message, regex: '^.+$', example: Hello from AREA!}
+    - title: Create clip
+      description: Create a clip of the live stream of a channel.
+      route: /twitch/create_clip
+      provider: twitch
+      input_fields:
+        - {name: broadcaster, regex: '^[A-Za-z0-9_]{3,25}$', example: channel_name}
+    - title: Ban user
+      description: Ban a user from the chat of the linked channel.
+      route: /twitch/ban_user
+      provider: twitch
+      input_fields: &twitch_user
+        - {name: user, regex: '^[A-Za-z0-9_]{3,25}$', example: user_name}
+    - title: Unban user
+      description: Unban a user from the chat of the linked channel.
+      route: /twitch/unban_user
+      provider: twitch
+      input_fields: *twitch_user
+    - title: Add moderator
+      description: Make a user moderator of the linked channel.
+      route: /twitch/add_moderator
+      provider: twitch
+      input_fields: *twitch_user
+    - title: Remove moderator
+      description: Remove a moderator of the linked channel.
+      route: /twitch/rm_moderator
+      provider: twitch
+      input_fields: *twitch_user
+    - title: Add VIP
+      description: Make a user VIP of the linked channel.
+      route: /twitch/add_vip
+      provider: twitch
+      input_fields: *twitch_user
+    - title: Remove VIP
+      description: Remove a VIP of the linked channel.
+      route: /twitch/rm_vip
+      provider: twitch
+      input_fields: *twitch_user
+    - title: Block user
+      description: Block a user.
+      route: /twitch/block_user
+      provider: twitch
+      input_fields: *twitch_user
+    - title: Unblock user
+      description: Unblock a user.
+      route: /twitch/unblock_user
+      provider: twitch
+      input_fields: *twitch_user
+    - title: Send whisper
+      description: Send a private message to a user.
+      route: /twitch/send_whisper
+      provider: twitch
+      input_fields:
+        - {name: user, regex: '^[A-Za-z0-9_]{3,25}$', example: user_name}
+        - {name: message, regex: '^.+$', example: Hello from AREA!}

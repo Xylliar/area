@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: binance-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: binance-service
+  template:
+    metadata:
+      labels:
+        app: binance-service
+    spec:
+      imagePullSecrets:
+        - name: arearegistrykey
+      containers:
+      - name: binance-container
+        image: julesreyn/area:binance
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

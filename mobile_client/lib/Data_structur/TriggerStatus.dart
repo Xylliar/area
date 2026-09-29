@@ -1,0 +1,4 @@
+enum TriggerStatus {
+  voided,
+  active,
+}

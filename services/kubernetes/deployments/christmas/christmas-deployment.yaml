@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: christmas-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: christmas-service
+  template:
+    metadata:
+      labels:
+        app: christmas-service
+    spec:
+      imagePullSecrets:
+        - name: arearegistrykey
+      containers:
+      - name: christmas-container
+        image: julesreyn/area:christmas
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

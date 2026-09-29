@@ -1,0 +1,4 @@
+# Local docker compose settings (API keys, OAuth secrets)
+/.env
+
+.DS_Store
